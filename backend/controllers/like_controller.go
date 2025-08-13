@@ -31,5 +31,5 @@ func GetLikes(ctx *gin.Context){
 		return
 	}
 
-	ctx.JSON(http.StatusOK,gin.H{"Likes:":likes})
+	ctx.JSON(http.StatusOK,gin.H{"likes":likes})
 }

@@ -3,12 +3,22 @@ package router
 import (
 	"exchangeapp/controllers"
 	"exchangeapp/middlewares"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 func SetupRouter() *gin.Engine {
 	r := gin.Default()
+	r.Use(cors.New(cors.Config{
+    AllowOrigins:     []string{"http://localhost:5173"},
+    AllowMethods:     []string{"GET", "POST","OPTIONS"},
+    AllowHeaders:     []string{"Origin","Content-Type","Authorization"},
+    ExposeHeaders:    []string{"Content-Length"},
+    AllowCredentials: true,
+    MaxAge: 12 * time.Hour,
+  }))
 	// 设置路由组
 	auth := r.Group("/api/auth")
 	{
@@ -26,8 +36,8 @@ func SetupRouter() *gin.Engine {
 		api.GET("articles",controllers.GetArticles)
 		api.GET("/articles/:id",controllers.GetArticleByid)
 
-		api.POST("/articles/:id/likes",controllers.LikeArticle)
-		api.GET("articles/:id/likes",controllers.GetLikes)
+		api.POST("/articles/:id/like",controllers.LikeArticle)
+		api.GET("articles/:id/like",controllers.GetLikes)
 	}
 	return r
 }
