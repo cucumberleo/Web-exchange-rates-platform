@@ -7,4 +7,5 @@ export interface Article {
 
 export interface Like{
     likes: number
+    is_liked : boolean
 }
