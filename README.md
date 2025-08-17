@@ -80,4 +80,42 @@ auth := r.Group("/api/auth")
 }
 ```
 
+### Login function
+**1. Define input format struct and Bindjson**
+```go
+var input struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+...
+```
 
+**2. Use gorm.db function `global.Db.Where("username = ?",input.Username).First(&user)` to find the first record of username that matched**
+```go
+if err := global.Db.Where("username = ?", input.Username).First((&user)).Error; err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Wrong credentials1"})
+		return
+	}
+```
+**3. Use `bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))` to check if the corresponding password is correct**
+if not matched , return 401 error
+```go
+func CheckPassword(password string, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
+```
+
+
+**4. Generate token and return**
+Also use `GenerateJWT(user.Username)` as used in Register func.
+
+
+**5. router setting**
+```go
+auth := r.Group("/api/auth")
+{
+	auth.POST("/login", controllers.Login)
+	auth.POST("/register", controllers.Register)
+}
+```
