@@ -34,8 +34,8 @@ func Register(ctx *gin.Context) {
 		})
 		return
 	}
-	if err := global.Db.AutoMigrate(&user); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	if err := global.Db.Create(&user).Error; err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"token": tokens})
