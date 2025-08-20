@@ -1,4 +1,4 @@
-## 后端功能说明
+## Backend Description
 
 ### Register function
    **1. Bind JSON information with user struct**
@@ -62,12 +62,12 @@ func GenerateJWT(username string) (string, error) {
 }
 ```
 **3. Write data into Database**
-Use `global.Db.AutoMigrate(&user)` to update the database with new information
+Use `global.Db.Create(&user)` to update the database with new information
 ```go
-if err := global.Db.AutoMigrate(&user); err != nil {
+if err := global.Db.Create(&article).Error; err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
-}
+	}
 ```
 
 **4. Config the router setting**
@@ -119,3 +119,80 @@ auth := r.Group("/api/auth")
 	auth.POST("/register", controllers.Register)
 }
 ```
+
+### Upload Exchangerate func
+**1. What message should we include in exchange rates? Is there any relationship between each piece of information?**
+```go
+type ExchangeRate struct {
+	ID           uint      `gorm:"primarykey" json:"_id"`
+	FromCurrency string    `json:"fromCurrency" binding:"required"`
+	ToCurrency   string    `json:"toCurrency" binding:"required"`
+	Rate         float64   `json:"rate" binding:"required"`
+	Date         time.Time `json:"date"`
+}
+```
+`FromCurrency` : Your currency
+`ToCurrency` : Exchanged currency
+`Rate` : Exchange rate
+These three information should be binded together to make calculation.
+
+
+**2.Two key functions we should write in `exchange_rate_controller.go`**
+##### 1.`func CreateExchangeRate(ctx *gin.Context)`:Create a record of exchangerate
+·Thinking: The information we upload is `Fromcurrency`,`Tocurrency`,`rate`; Besides,Id is set as primarykey and increase automatically. But our message struct include also date, we should not forget to manually set the date information.
+**Bind json information**
+```go
+if err := ctx.ShouldBindJSON(&exchangeRate); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+}
+exchangeRate.Date = time.Now()
+```
+
+**Write information into DB**
+```go
+// Try to fit the format
+if err:=global.Db.AutoMigrate(&exchangeRate); err!=nil{
+	// 500 error
+	ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	return
+}
+// Create the table record in sql
+if err:=global.Db.Create(&exchangeRate); err!=nil{
+	ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	return
+}
+```
+
+##### 2. func GetExchangeRates(ctx *gin.Context): Get the exchange rate
+Thinking: As we do not want to return all the message in exchangerate struct, so we only need to instantiate slice of the struct.`[]models.ExchangeRate`
+Use `errors.Is` to judge if the error is the certain error
+```go
+if err:= global.Db.Find(&exchangeRates).Error; err!=nil{
+	// Case1:The record is acturally not in the Db
+	// Case2:The record is in Db but you can not fetch it
+	if errors.Is(err,gorm.ErrorRecordNotFound){
+		ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error})
+	}else{
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Err})
+	}
+	return
+	
+}
+```
+**3.Setup router**
+Thinking: The exchangeRate message is open to public in my design, but I want some later functions and create exchange rate are only available to user that login,how should I achieve this?  Answer: Use middleware!
+
+##### AuthMiddleware
+Use `routergroup.Use(middleware HandlerFunc)` to verify login status.
+Offical code：
+```go
+func (group *RouterGroup) Use(middleware ...HandlerFunc) IRoutes {
+	group.Handlers = append(group.Handlers, middleware...)
+	return group.returnObj()
+}
+```
+
+
+
+

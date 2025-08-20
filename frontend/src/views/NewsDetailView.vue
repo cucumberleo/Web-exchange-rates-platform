@@ -6,7 +6,7 @@
         <p>{{ article.Content }}</p>
         <div>
           <el-button :type="isLiked ? 'info' : 'primary'" @click="likeArticle">
-            {{ isLiked ? 'cancel like' : 'like' }}
+            {{ isLiked ? 'Cancel like' : 'Like' }}
           </el-button>
           <p>Likes: {{ likes }}</p>
         </div>
